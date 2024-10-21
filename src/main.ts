@@ -10,29 +10,48 @@ header.innerHTML = APP_NAME;
 app.append(header);
 
 const canvas = document.createElement("canvas");
-app.append(canvas);
-
 const canvCont = canvas.getContext("2d");
+app.append(canvas);
 
 let mouseX = 0;
 let mouseY = 0;
 let mouseActive = false;
 
+const lineStore : Array<Array<Array<number>>> = [];
+let workingLine : Array<Array<number>>;
+
+const changeDraw = new Event("drawing-changed");
+
+canvas.addEventListener("drawing-changed", () => {
+    canvCont?.clearRect(0, 0, canvas.width, canvas.height);
+    for (const line of lineStore) {
+        canvCont?.beginPath();
+        canvCont?.moveTo(line[0][0], line[0][1]); //get to line start
+        for(const point of line) {
+            canvCont?.lineTo(point[0], point[1]);
+        }
+        canvCont?.stroke();
+    }
+});
+
 canvas.addEventListener("mousedown", (ev) => {
     mouseX = ev.offsetX;
     mouseY = ev.offsetY;
     mouseActive = true;
+    workingLine = [];
+    lineStore.push(workingLine);
+
+    workingLine.push([mouseX, mouseY]);
+    canvas.dispatchEvent(changeDraw);
 });
 
 canvas.addEventListener("mousemove", (ev) => {
     if (mouseActive) {
-        canvCont?.beginPath();
-        canvCont?.moveTo(mouseX, mouseY);
-        canvCont?.lineTo(ev.offsetX, ev.offsetY);
-        canvCont?.stroke();
-        canvCont?.closePath();
         mouseX = ev.offsetX;
         mouseY = ev.offsetY;
+
+        workingLine.push([mouseX, mouseY]);
+        canvas.dispatchEvent(changeDraw);
     }
 });
 
@@ -40,6 +59,9 @@ canvas.addEventListener("mouseup", () => {
     mouseX = 0;
     mouseY = 0;
     mouseActive = false;
+
+    workingLine = [];
+    canvas.dispatchEvent(changeDraw);
 });
 
 
@@ -50,4 +72,5 @@ app.append(cButton);
 
 cButton.onclick = () => {
     canvCont?.clearRect(0, 0, canvas.width, canvas.height);
+    lineStore.splice(0, lineStore.length);
 };
