@@ -20,6 +20,8 @@ let mouseActive = false;
 const lineStore : Array<Array<Array<number>>> = [];
 let workingLine : Array<Array<number>>;
 
+const redoStore : Array<Array<Array<number>>> = [];
+
 const changeDraw = new Event("drawing-changed");
 
 canvas.addEventListener("drawing-changed", () => {
@@ -40,6 +42,8 @@ canvas.addEventListener("mousedown", (ev) => {
     mouseActive = true;
     workingLine = [];
     lineStore.push(workingLine);
+
+
 
     workingLine.push([mouseX, mouseY]);
     canvas.dispatchEvent(changeDraw);
@@ -73,4 +77,31 @@ app.append(cButton);
 cButton.onclick = () => {
     canvCont?.clearRect(0, 0, canvas.width, canvas.height);
     lineStore.splice(0, lineStore.length);
+    redoStore.splice(0, redoStore.length);
+};
+
+const uButton = document.createElement("button");
+uButton.innerHTML = "Undo Line";
+app.append(uButton);
+
+uButton.onclick = () => {
+    const toRedo = lineStore.pop();
+    if(toRedo != undefined) {
+        redoStore.push(toRedo);
+    }
+    console.log(redoStore);
+    canvas.dispatchEvent(changeDraw);
+};
+
+const rButton = document.createElement("button");
+rButton.innerHTML = "Redo Line";
+app.append(rButton);
+
+rButton.onclick = () => {
+    const toLines = redoStore.pop();
+    if(toLines != undefined) {
+        lineStore.push(toLines);
+    }
+
+    canvas.dispatchEvent(changeDraw);
 };
