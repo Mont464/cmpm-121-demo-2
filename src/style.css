@@ -83,7 +83,7 @@ button:focus-visible {
 
 canvas {
   background: white; 
-  border: solid cyan 7px;
+  border: solid black 5px;
   border-radius: 30px;
 }
 
