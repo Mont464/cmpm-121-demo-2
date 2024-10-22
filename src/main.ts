@@ -12,6 +12,8 @@ app.append(header);
 const canvas = document.createElement("canvas");
 const canvCont = canvas.getContext("2d");
 app.append(canvas);
+canvas.width = 256;
+canvas.height = 256;
 
 let mouseX = 0;
 let mouseY = 0;
@@ -89,7 +91,6 @@ uButton.onclick = () => {
     if(toRedo != undefined) {
         redoStore.push(toRedo);
     }
-    console.log(redoStore);
     canvas.dispatchEvent(changeDraw);
 };
 
