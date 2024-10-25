@@ -19,22 +19,64 @@ let mouseX = 0;
 let mouseY = 0;
 let mouseActive = false;
 
-const lineStore : Array<Array<Array<number>>> = [];
-let workingLine : Array<Array<number>>;
+interface currentContent {
+    display(ctx: CanvasRenderingContext2D): void;
+}
 
-const redoStore : Array<Array<Array<number>>> = [];
+class displayList implements currentContent {
+    lineStore: Array<Array<Array<number>>>;
+    workingLine: Array<Array<number>>;
+
+    constructor() {
+        this.lineStore = [];
+        this.workingLine = [];
+    }
+
+    display(canvCont: CanvasRenderingContext2D): void {
+        canvCont?.clearRect(0, 0, canvas.width, canvas.height);
+        for (const line of this.lineStore) {
+            canvCont?.beginPath();
+            canvCont?.moveTo(line[0][0], line[0][1]); //get to line start
+            for(const point of line) {
+                canvCont?.lineTo(point[0], point[1]);
+            }
+            canvCont?.stroke();
+        }
+    }
+
+    moveLine(x: number, y: number) {
+        this.workingLine.push([x, y]);
+    }
+
+    setLine(l: Array<Array<number>>) {
+        this.workingLine = l;
+    }
+
+    addLine() {
+        this.lineStore.push(this.workingLine);
+    }
+
+    removeLine() {
+        return this.lineStore.pop();
+    }
+
+    clearStore() {
+        this.lineStore = [];
+    }
+
+    clearLine() {
+        this.workingLine = [];
+    }
+}
+
+const lines : displayList = new displayList();
+const redo : displayList = new displayList();
 
 const changeDraw = new Event("drawing-changed");
 
 canvas.addEventListener("drawing-changed", () => {
-    canvCont?.clearRect(0, 0, canvas.width, canvas.height);
-    for (const line of lineStore) {
-        canvCont?.beginPath();
-        canvCont?.moveTo(line[0][0], line[0][1]); //get to line start
-        for(const point of line) {
-            canvCont?.lineTo(point[0], point[1]);
-        }
-        canvCont?.stroke();
+    if(canvCont != null) {
+        lines.display(canvCont);
     }
 });
 
@@ -42,12 +84,12 @@ canvas.addEventListener("mousedown", (ev) => {
     mouseX = ev.offsetX;
     mouseY = ev.offsetY;
     mouseActive = true;
-    workingLine = [];
-    lineStore.push(workingLine);
+    lines.clearLine()
+    lines.addLine();
 
 
 
-    workingLine.push([mouseX, mouseY]);
+    lines.moveLine(mouseX, mouseY);
     canvas.dispatchEvent(changeDraw);
 });
 
@@ -56,7 +98,7 @@ canvas.addEventListener("mousemove", (ev) => {
         mouseX = ev.offsetX;
         mouseY = ev.offsetY;
 
-        workingLine.push([mouseX, mouseY]);
+        lines.moveLine(mouseX, mouseY);
         canvas.dispatchEvent(changeDraw);
     }
 });
@@ -66,7 +108,7 @@ canvas.addEventListener("mouseup", () => {
     mouseY = 0;
     mouseActive = false;
 
-    workingLine = [];
+    lines.clearLine();
     canvas.dispatchEvent(changeDraw);
 });
 
@@ -78,8 +120,8 @@ app.append(cButton);
 
 cButton.onclick = () => {
     canvCont?.clearRect(0, 0, canvas.width, canvas.height);
-    lineStore.splice(0, lineStore.length);
-    redoStore.splice(0, redoStore.length);
+    lines.clearStore()
+    redo.clearStore()
 };
 
 const uButton = document.createElement("button");
@@ -87,9 +129,10 @@ uButton.innerHTML = "Undo Line";
 app.append(uButton);
 
 uButton.onclick = () => {
-    const toRedo = lineStore.pop();
+    const toRedo = lines.removeLine();
     if(toRedo != undefined) {
-        redoStore.push(toRedo);
+        redo.setLine(toRedo);
+        redo.addLine();
     }
     canvas.dispatchEvent(changeDraw);
 };
@@ -99,9 +142,10 @@ rButton.innerHTML = "Redo Line";
 app.append(rButton);
 
 rButton.onclick = () => {
-    const toLines = redoStore.pop();
+    const toLines = redo.removeLine();
     if(toLines != undefined) {
-        lineStore.push(toLines);
+        lines.setLine(toLines);
+        lines.addLine();
     }
 
     canvas.dispatchEvent(changeDraw);
