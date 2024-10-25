@@ -10,7 +10,7 @@ header.innerHTML = APP_NAME;
 app.append(header);
 
 const canvas = document.createElement("canvas");
-const canvCont = canvas.getContext("2d");
+const context = canvas.getContext("2d")!;
 app.append(canvas);
 canvas.width = 256;
 canvas.height = 256;
@@ -23,60 +23,36 @@ interface Displayable {
   display(ctx: CanvasRenderingContext2D): void;
 }
 
-class DisplayList implements Displayable {
-  lineStore: Array<Array<Array<number>>>;
-  workingLine: Array<Array<number>>;
+interface Point {
+  x: number;
+  y: number;
+}
 
-  constructor() {
-    this.lineStore = [];
-    this.workingLine = [];
-  }
+type Line = Array<Point>;
 
-  display(canvCont: CanvasRenderingContext2D): void {
-    canvCont?.clearRect(0, 0, canvas.width, canvas.height);
-    for (const line of this.lineStore) {
-      canvCont?.beginPath();
-      canvCont?.moveTo(line[0][0], line[0][1]); //get to line start
-      for (const point of line) {
-        canvCont?.lineTo(point[0], point[1]);
-      }
-      canvCont?.stroke();
+let workingLine: Line = [];
+
+class LineDisplayble implements Displayable {
+  constructor(readonly line: Line) {}
+  display(ctx: CanvasRenderingContext2D): void {
+    ctx.beginPath();
+    ctx.moveTo(this.line[0].x, this.line[0].y); //get to line start
+    for (const { x, y } of this.line) {
+      ctx.lineTo(x, y);
     }
-  }
-
-  moveLine(x: number, y: number) {
-    this.workingLine.push([x, y]);
-  }
-
-  setLine(l: Array<Array<number>>) {
-    this.workingLine = l;
-  }
-
-  addLine() {
-    this.lineStore.push(this.workingLine);
-  }
-
-  removeLine() {
-    return this.lineStore.pop();
-  }
-
-  clearStore() {
-    this.lineStore = [];
-  }
-
-  clearLine() {
-    this.workingLine = [];
+    ctx.stroke();
   }
 }
 
-const lines: DisplayList = new DisplayList();
-const redo: DisplayList = new DisplayList();
+let displayList: Array<Displayable> = [];
+let redoDisplayList: Array<Displayable> = [];
 
 const changeDraw = new Event("drawing-changed");
 
 canvas.addEventListener("drawing-changed", () => {
-  if (canvCont != null) {
-    lines.display(canvCont);
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  for (const d of displayList) {
+    d.display(context);
   }
 });
 
@@ -84,10 +60,10 @@ canvas.addEventListener("mousedown", (ev) => {
   mouseX = ev.offsetX;
   mouseY = ev.offsetY;
   mouseActive = true;
-  lines.clearLine();
-  lines.addLine();
+  workingLine = [];
+  displayList.push(new LineDisplayble(workingLine));
 
-  lines.moveLine(mouseX, mouseY);
+  workingLine.push({ x: mouseX, y: mouseY });
   canvas.dispatchEvent(changeDraw);
 });
 
@@ -96,7 +72,7 @@ canvas.addEventListener("mousemove", (ev) => {
     mouseX = ev.offsetX;
     mouseY = ev.offsetY;
 
-    lines.moveLine(mouseX, mouseY);
+    workingLine.push({ x: mouseX, y: mouseY });
     canvas.dispatchEvent(changeDraw);
   }
 });
@@ -106,7 +82,6 @@ canvas.addEventListener("mouseup", () => {
   mouseY = 0;
   mouseActive = false;
 
-  lines.clearLine();
   canvas.dispatchEvent(changeDraw);
 });
 
@@ -115,9 +90,9 @@ clearButton.innerHTML = "Clear Drawing";
 app.append(clearButton);
 
 clearButton.onclick = () => {
-  canvCont?.clearRect(0, 0, canvas.width, canvas.height);
-  lines.clearStore();
-  redo.clearStore();
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  displayList = [];
+  redoDisplayList = [];
 };
 
 const undoButton = document.createElement("button");
@@ -125,10 +100,9 @@ undoButton.innerHTML = "Undo Line";
 app.append(undoButton);
 
 undoButton.onclick = () => {
-  const toRedo = lines.removeLine();
+  const toRedo = displayList.pop();
   if (toRedo != undefined) {
-    redo.setLine(toRedo);
-    redo.addLine();
+    redoDisplayList.push(toRedo);
   }
   canvas.dispatchEvent(changeDraw);
 };
@@ -138,10 +112,9 @@ redoButton.innerHTML = "Redo Line";
 app.append(redoButton);
 
 redoButton.onclick = () => {
-  const toLines = redo.removeLine();
-  if (toLines != undefined) {
-    lines.setLine(toLines);
-    lines.addLine();
+  const toDisplay = redoDisplayList.pop();
+  if (toDisplay != undefined) {
+    displayList.push(toDisplay);
   }
 
   canvas.dispatchEvent(changeDraw);
