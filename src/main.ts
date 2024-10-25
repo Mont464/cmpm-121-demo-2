@@ -19,11 +19,11 @@ let mouseX = 0;
 let mouseY = 0;
 let mouseActive = false;
 
-interface CurrentContent {
+interface Displayable {
   display(ctx: CanvasRenderingContext2D): void;
 }
 
-class DisplayList implements CurrentContent {
+class DisplayList implements Displayable {
   lineStore: Array<Array<Array<number>>>;
   workingLine: Array<Array<number>>;
 
@@ -110,21 +110,21 @@ canvas.addEventListener("mouseup", () => {
   canvas.dispatchEvent(changeDraw);
 });
 
-const cButton = document.createElement("button");
-cButton.innerHTML = "Clear Drawing";
-app.append(cButton);
+const clearButton = document.createElement("button");
+clearButton.innerHTML = "Clear Drawing";
+app.append(clearButton);
 
-cButton.onclick = () => {
+clearButton.onclick = () => {
   canvCont?.clearRect(0, 0, canvas.width, canvas.height);
   lines.clearStore();
   redo.clearStore();
 };
 
-const uButton = document.createElement("button");
-uButton.innerHTML = "Undo Line";
-app.append(uButton);
+const undoButton = document.createElement("button");
+undoButton.innerHTML = "Undo Line";
+app.append(undoButton);
 
-uButton.onclick = () => {
+undoButton.onclick = () => {
   const toRedo = lines.removeLine();
   if (toRedo != undefined) {
     redo.setLine(toRedo);
@@ -133,11 +133,11 @@ uButton.onclick = () => {
   canvas.dispatchEvent(changeDraw);
 };
 
-const rButton = document.createElement("button");
-rButton.innerHTML = "Redo Line";
-app.append(rButton);
+const redoButton = document.createElement("button");
+redoButton.innerHTML = "Redo Line";
+app.append(redoButton);
 
-rButton.onclick = () => {
+redoButton.onclick = () => {
   const toLines = redo.removeLine();
   if (toLines != undefined) {
     lines.setLine(toLines);
