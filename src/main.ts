@@ -14,10 +14,7 @@ const context = canvas.getContext("2d")!;
 app.append(canvas);
 canvas.width = 256;
 canvas.height = 256;
-
-let mouseX = 0;
-let mouseY = 0;
-let mouseActive = false;
+canvas.style.cursor = "none";
 
 interface Displayable {
   display(ctx: CanvasRenderingContext2D): void;
@@ -28,10 +25,10 @@ interface Point {
   y: number;
 }
 
-type Line = {points: Array<Point>, thickness: number};
+type Line = { points: Array<Point>; thickness: number };
 
 let lineThickness: number = 2;
-let workingLine: Line = {points: [], thickness: lineThickness};
+let workingLine: Line = { points: [], thickness: lineThickness };
 
 class LineDisplayble implements Displayable {
   constructor(readonly line: Line) {}
@@ -58,33 +55,75 @@ canvas.addEventListener("drawing-changed", () => {
   }
 });
 
+interface Mouse {
+  x: number;
+  y: number;
+  active: boolean;
+}
+
+class mouseDisplayable implements Displayable {
+  constructor(readonly mouse: Mouse) {}
+  display(ctx: CanvasRenderingContext2D): void {
+    if (!this.mouse.active) {
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(this.mouse.x, this.mouse.y, lineThickness, 0, 2 * Math.PI, false);
+      ctx.fill();
+    }
+  }
+}
+
+let mouseObject: mouseDisplayable = new mouseDisplayable({
+  x: 0,
+  y: 0,
+  active: false,
+});
+
+const movedTool = new Event("tool-moved");
+
+canvas.addEventListener("tool-moved", () => {
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  for (const d of displayList) {
+    d.display(context);
+  }
+  mouseObject.display(context);
+});
+
 canvas.addEventListener("mousedown", (ev) => {
-  mouseX = ev.offsetX;
-  mouseY = ev.offsetY;
-  mouseActive = true;
-  workingLine = {points: [], thickness: lineThickness};
+  mouseObject = new mouseDisplayable({
+    x: ev.offsetX,
+    y: ev.offsetY,
+    active: true,
+  });
+  workingLine = { points: [], thickness: lineThickness };
   displayList.push(new LineDisplayble(workingLine));
 
-  workingLine.points.push({ x: mouseX, y: mouseY });
+  workingLine.points.push({ x: mouseObject.mouse.x, y: mouseObject.mouse.y });
   canvas.dispatchEvent(changeDraw);
+  canvas.dispatchEvent(movedTool);
 });
 
 canvas.addEventListener("mousemove", (ev) => {
-  if (mouseActive) {
-    mouseX = ev.offsetX;
-    mouseY = ev.offsetY;
-
-    workingLine.points.push({ x: mouseX, y: mouseY });
+  mouseObject = new mouseDisplayable({
+    x: ev.offsetX,
+    y: ev.offsetY,
+    active: mouseObject.mouse.active,
+  });
+  if (mouseObject?.mouse.active) {
+    workingLine.points.push({ x: mouseObject.mouse.x, y: mouseObject.mouse.y });
     canvas.dispatchEvent(changeDraw);
   }
+  canvas.dispatchEvent(movedTool);
 });
 
-canvas.addEventListener("mouseup", () => {
-  mouseX = 0;
-  mouseY = 0;
-  mouseActive = false;
-
+canvas.addEventListener("mouseup", (ev) => {
+  mouseObject = new mouseDisplayable({
+    x: ev.offsetX,
+    y: ev.offsetY,
+    active: false,
+  });
   canvas.dispatchEvent(changeDraw);
+  canvas.dispatchEvent(movedTool);
 });
 
 const clearButton = document.createElement("button");
