@@ -55,10 +55,28 @@ canvas.addEventListener("drawing-changed", () => {
   }
 });
 
+interface Sticker {
+    x: number;
+    y: number;
+    emoji: string;
+}
+
+class stickerDisplayable implements Displayable {
+    constructor(readonly sticker: Sticker | null) {}
+    display(ctx: CanvasRenderingContext2D): void {
+      if (this.sticker != null) {
+        ctx.fillText(this.sticker.emoji, this.sticker.x, this.sticker.y);
+      }
+    }
+}
+
+let currentSticker: stickerDisplayable  = new stickerDisplayable(null)!;
+
 interface Mouse {
   x: number;
   y: number;
   active: boolean;
+  sticker: Sticker | null;
 }
 
 class mouseDisplayable implements Displayable {
@@ -67,8 +85,13 @@ class mouseDisplayable implements Displayable {
     if (!this.mouse.active) {
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(this.mouse.x, this.mouse.y, lineThickness, 0, 2 * Math.PI, false);
-      ctx.fill();
+      if (this.mouse.sticker == null) {
+        ctx.arc(this.mouse.x, this.mouse.y, lineThickness, 0, 2 * Math.PI, false);
+        ctx.fill();
+      }
+      else {
+        ctx.fillText(this.mouse.sticker.emoji, this.mouse.x, this.mouse.y);
+      }
     }
   }
 }
@@ -77,6 +100,7 @@ let mouseObject: mouseDisplayable = new mouseDisplayable({
   x: 0,
   y: 0,
   active: false,
+  sticker: null
 });
 
 const movedTool = new Event("tool-moved");
@@ -87,18 +111,28 @@ canvas.addEventListener("tool-moved", () => {
     d.display(context);
   }
   mouseObject.display(context);
+  currentSticker.display(context);
 });
+
+
 
 canvas.addEventListener("mousedown", (ev) => {
   mouseObject = new mouseDisplayable({
     x: ev.offsetX,
     y: ev.offsetY,
     active: true,
+    sticker: currentSticker.sticker
   });
-  workingLine = { points: [], thickness: lineThickness };
-  displayList.push(new LineDisplayble(workingLine));
+  if (currentSticker.sticker == null) {
+    workingLine = { points: [], thickness: lineThickness };
+    displayList.push(new LineDisplayble(workingLine));
 
-  workingLine.points.push({ x: mouseObject.mouse.x, y: mouseObject.mouse.y });
+    workingLine.points.push({ x: mouseObject.mouse.x, y: mouseObject.mouse.y });
+  }
+  else {
+    currentSticker.sticker.x = ev.offsetX;
+    currentSticker.sticker.y = ev.offsetY;
+  }
   canvas.dispatchEvent(changeDraw);
   canvas.dispatchEvent(movedTool);
 });
@@ -108,10 +142,17 @@ canvas.addEventListener("mousemove", (ev) => {
     x: ev.offsetX,
     y: ev.offsetY,
     active: mouseObject.mouse.active,
+    sticker: currentSticker.sticker
   });
   if (mouseObject?.mouse.active) {
-    workingLine.points.push({ x: mouseObject.mouse.x, y: mouseObject.mouse.y });
-    canvas.dispatchEvent(changeDraw);
+    if (currentSticker.sticker == null) {
+        workingLine.points.push({ x: mouseObject.mouse.x, y: mouseObject.mouse.y });
+        canvas.dispatchEvent(changeDraw);
+    }
+    else {
+        currentSticker.sticker.x = ev.offsetX;
+        currentSticker.sticker.y = ev.offsetY;
+    }
   }
   canvas.dispatchEvent(movedTool);
 });
@@ -121,7 +162,13 @@ canvas.addEventListener("mouseup", (ev) => {
     x: ev.offsetX,
     y: ev.offsetY,
     active: false,
+    sticker: currentSticker.sticker
   });
+  if (currentSticker.sticker != null) {
+    currentSticker.sticker.x = ev.offsetX;
+    currentSticker.sticker.y = ev.offsetY;
+    displayList.push(currentSticker);
+  }
   canvas.dispatchEvent(changeDraw);
   canvas.dispatchEvent(movedTool);
 });
@@ -166,6 +213,8 @@ thinButton.innerHTML = "Thin Line";
 app.append(thinButton);
 
 thinButton.onclick = () => {
+    mouseObject.mouse.sticker = null;
+    currentSticker = new stickerDisplayable(null);
   lineThickness = 2;
 };
 
@@ -174,5 +223,31 @@ thickButton.innerHTML = "Thick Line";
 app.append(thickButton);
 
 thickButton.onclick = () => {
-  lineThickness = 5;
+    mouseObject.mouse.sticker = null;
+    currentSticker = new stickerDisplayable(null);
+    lineThickness = 5;
+};
+
+const emojiButton1 = document.createElement("button");
+emojiButton1.innerHTML = "Clown Sticker";
+app.append(emojiButton1);
+
+emojiButton1.onclick = () => {
+    currentSticker = new stickerDisplayable({x: currentSticker.sticker?.x!, y: currentSticker.sticker?.y!, emoji: "🤡"});
+};
+
+const emojiButton2 = document.createElement("button");
+emojiButton2.innerHTML = "Crying Sticker";
+app.append(emojiButton2);
+
+emojiButton2.onclick = () => {
+    currentSticker = new stickerDisplayable({x: currentSticker.sticker?.x!, y: currentSticker.sticker?.y!, emoji: "😭"});
+};
+
+const emojiButton3 = document.createElement("button");
+emojiButton3.innerHTML = "Star-Eyed Sticker";
+app.append(emojiButton3);
+
+emojiButton3.onclick = () => {
+    currentSticker = new stickerDisplayable({x: currentSticker.sticker?.x!, y: currentSticker.sticker?.y!, emoji: "🤩"});
 };
