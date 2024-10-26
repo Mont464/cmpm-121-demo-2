@@ -28,16 +28,18 @@ interface Point {
   y: number;
 }
 
-type Line = Array<Point>;
+type Line = {points: Array<Point>, thickness: number};
 
-let workingLine: Line = [];
+let lineThickness: number = 2;
+let workingLine: Line = {points: [], thickness: lineThickness};
 
 class LineDisplayble implements Displayable {
   constructor(readonly line: Line) {}
   display(ctx: CanvasRenderingContext2D): void {
+    ctx.lineWidth = this.line.thickness;
     ctx.beginPath();
-    ctx.moveTo(this.line[0].x, this.line[0].y); //get to line start
-    for (const { x, y } of this.line) {
+    ctx.moveTo(this.line.points[0].x, this.line.points[0].y); //get to line start
+    for (const { x, y } of this.line.points) {
       ctx.lineTo(x, y);
     }
     ctx.stroke();
@@ -60,10 +62,10 @@ canvas.addEventListener("mousedown", (ev) => {
   mouseX = ev.offsetX;
   mouseY = ev.offsetY;
   mouseActive = true;
-  workingLine = [];
+  workingLine = {points: [], thickness: lineThickness};
   displayList.push(new LineDisplayble(workingLine));
 
-  workingLine.push({ x: mouseX, y: mouseY });
+  workingLine.points.push({ x: mouseX, y: mouseY });
   canvas.dispatchEvent(changeDraw);
 });
 
@@ -72,7 +74,7 @@ canvas.addEventListener("mousemove", (ev) => {
     mouseX = ev.offsetX;
     mouseY = ev.offsetY;
 
-    workingLine.push({ x: mouseX, y: mouseY });
+    workingLine.points.push({ x: mouseX, y: mouseY });
     canvas.dispatchEvent(changeDraw);
   }
 });
@@ -118,4 +120,20 @@ redoButton.onclick = () => {
   }
 
   canvas.dispatchEvent(changeDraw);
+};
+
+const thinButton = document.createElement("button");
+thinButton.innerHTML = "Thin Line";
+app.append(thinButton);
+
+thinButton.onclick = () => {
+  lineThickness = 2;
+};
+
+const thickButton = document.createElement("button");
+thickButton.innerHTML = "Thick Line";
+app.append(thickButton);
+
+thickButton.onclick = () => {
+  lineThickness = 5;
 };
