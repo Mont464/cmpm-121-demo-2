@@ -16,6 +16,8 @@ canvas.width = 256;
 canvas.height = 256;
 canvas.style.cursor = "none";
 
+context.font = "30px serif";
+
 interface Displayable {
   display(ctx: CanvasRenderingContext2D): void;
 }
@@ -189,7 +191,7 @@ clearButton.onclick = () => {
 };
 
 const undoButton = document.createElement("button");
-undoButton.innerHTML = "Undo Line";
+undoButton.innerHTML = "Undo";
 app.append(undoButton);
 
 undoButton.onclick = () => {
@@ -201,7 +203,7 @@ undoButton.onclick = () => {
 };
 
 const redoButton = document.createElement("button");
-redoButton.innerHTML = "Redo Line";
+redoButton.innerHTML = "Redo";
 app.append(redoButton);
 
 redoButton.onclick = () => {
