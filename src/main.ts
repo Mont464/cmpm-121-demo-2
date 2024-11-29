@@ -27,10 +27,10 @@ interface Point {
   y: number;
 }
 
-type Line = { points: Array<Point>; thickness: number };
+type Line = { points: Array<Point>; thickness: number, hue: number };
 
 let lineThickness: number = 2;
-let workingLine: Line = { points: [], thickness: lineThickness };
+let workingLine: Line = { points: [], thickness: lineThickness, hue: 0};
 
 class LineDisplayble implements Displayable {
   constructor(readonly line: Line) {}
@@ -41,6 +41,8 @@ class LineDisplayble implements Displayable {
     for (const { x, y } of this.line.points) {
       ctx.lineTo(x, y);
     }
+
+    ctx.strokeStyle = `hsl(${this.line.hue}, 100%, 50%)`;
     ctx.stroke();
   }
 }
@@ -77,6 +79,7 @@ let currentSticker: stickerDisplayable = new stickerDisplayable(null)!;
 interface Mouse {
   x: number;
   y: number;
+  hue: number;
   active: boolean;
   sticker: Sticker | null;
 }
@@ -96,6 +99,7 @@ class mouseDisplayable implements Displayable {
           2 * Math.PI,
           false
         );
+        ctx.fillStyle = `hsl(${this.mouse.hue}, 100%, 50%)`;
         ctx.fill();
       } else {
         ctx.fillText(this.mouse.sticker.emoji, this.mouse.x, this.mouse.y);
@@ -107,6 +111,7 @@ class mouseDisplayable implements Displayable {
 let mouseObject: mouseDisplayable = new mouseDisplayable({
   x: 0,
   y: 0,
+  hue: 0,
   active: false,
   sticker: null,
 });
@@ -126,11 +131,12 @@ canvas.addEventListener("mousedown", (ev) => {
   mouseObject = new mouseDisplayable({
     x: ev.offsetX,
     y: ev.offsetY,
+    hue: mouseObject.mouse.hue,
     active: true,
     sticker: currentSticker.sticker,
   });
   if (currentSticker.sticker == null) {
-    workingLine = { points: [], thickness: lineThickness };
+    workingLine = { points: [], thickness: lineThickness, hue: mouseObject.mouse.hue };
     displayList.push(new LineDisplayble(workingLine));
 
     workingLine.points.push({ x: mouseObject.mouse.x, y: mouseObject.mouse.y });
@@ -146,6 +152,7 @@ canvas.addEventListener("mousemove", (ev) => {
   mouseObject = new mouseDisplayable({
     x: ev.offsetX,
     y: ev.offsetY,
+    hue: mouseObject.mouse.hue,
     active: mouseObject.mouse.active,
     sticker: currentSticker.sticker,
   });
@@ -168,6 +175,7 @@ canvas.addEventListener("mouseup", (ev) => {
   mouseObject = new mouseDisplayable({
     x: ev.offsetX,
     y: ev.offsetY,
+    hue: mouseObject.mouse.hue,
     active: false,
     sticker: currentSticker.sticker,
   });
@@ -290,5 +298,15 @@ exportButton.onclick = () => {
   downloadLink.href = imageData;
   downloadLink.download = `${APP_NAME}.png`;
   downloadLink.click();
+};
+
+const randomHueButton = document.createElement("button");
+randomHueButton.innerHTML = "Randomize Line Hue";
+app.append(randomHueButton);
+
+randomHueButton.onclick = () => {
+  const newHue = Math.floor(Math.random() * 360);
+  mouseObject.mouse.hue = newHue;
+  randomHueButton.style.borderColor = `hsl(${newHue}, 100%, 50%)`;
 };
 
