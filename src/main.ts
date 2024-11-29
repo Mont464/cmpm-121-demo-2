@@ -233,32 +233,6 @@ thickButton.onclick = () => {
   lineThickness = 5;
 };
 
-/*
-const emojiButton1 = document.createElement("button");
-emojiButton1.innerHTML = "Clown Sticker";
-app.append(emojiButton1);
-
-emojiButton1.onclick = () => {
-    currentSticker = new stickerDisplayable({x: currentSticker.sticker?.x!, y: currentSticker.sticker?.y!, emoji: "🤡"});
-};
-
-const emojiButton2 = document.createElement("button");
-emojiButton2.innerHTML = "Crying Sticker";
-app.append(emojiButton2);
-
-emojiButton2.onclick = () => {
-    currentSticker = new stickerDisplayable({x: currentSticker.sticker?.x!, y: currentSticker.sticker?.y!, emoji: "😭"});
-};
-
-const emojiButton3 = document.createElement("button");
-emojiButton3.innerHTML = "Star-Eyed Sticker";
-app.append(emojiButton3);
-
-emojiButton3.onclick = () => {
-    currentSticker = new stickerDisplayable({x: currentSticker.sticker?.x!, y: currentSticker.sticker?.y!, emoji: "🤩"});
-};
-*/
-
 let stickerNumber = 1;
 function makeStickerButton(emoji: string): void {
   const emojiButton = document.createElement("button");
@@ -289,3 +263,30 @@ customStickerButton.onclick = () => {
     makeStickerButton(newEmoji);
   }
 };
+
+//Was able to talk through with Brace how to make this code
+const exportButton = document.createElement("button");
+exportButton.innerHTML = "Export Drawing";
+app.append(exportButton);
+
+exportButton.onclick = () => {
+  const exportCanvas = document.createElement("canvas");
+  const exportContext = exportCanvas.getContext("2d")!;
+  exportCanvas.width = 1024;
+  exportCanvas.height = 1024;
+  
+
+  exportContext.scale(4, 4);
+
+  for (const d of displayList) {
+    d.display(exportContext);
+  }
+
+  const imageData = exportCanvas.toDataURL("image/png");
+
+  const downloadLink = document.createElement("a");
+  downloadLink.href = imageData;
+  downloadLink.download = `${APP_NAME}.png`;
+  downloadLink.click();
+};
+
