@@ -56,21 +56,21 @@ canvas.addEventListener("drawing-changed", () => {
 });
 
 interface Sticker {
-    x: number;
-    y: number;
-    emoji: string;
+  x: number;
+  y: number;
+  emoji: string;
 }
 
 class stickerDisplayable implements Displayable {
-    constructor(readonly sticker: Sticker | null) {}
-    display(ctx: CanvasRenderingContext2D): void {
-      if (this.sticker != null) {
-        ctx.fillText(this.sticker.emoji, this.sticker.x, this.sticker.y);
-      }
+  constructor(readonly sticker: Sticker | null) {}
+  display(ctx: CanvasRenderingContext2D): void {
+    if (this.sticker != null) {
+      ctx.fillText(this.sticker.emoji, this.sticker.x, this.sticker.y);
     }
+  }
 }
 
-let currentSticker: stickerDisplayable  = new stickerDisplayable(null)!;
+let currentSticker: stickerDisplayable = new stickerDisplayable(null)!;
 
 interface Mouse {
   x: number;
@@ -86,10 +86,16 @@ class mouseDisplayable implements Displayable {
       ctx.lineWidth = 2;
       ctx.beginPath();
       if (this.mouse.sticker == null) {
-        ctx.arc(this.mouse.x, this.mouse.y, lineThickness, 0, 2 * Math.PI, false);
+        ctx.arc(
+          this.mouse.x,
+          this.mouse.y,
+          lineThickness,
+          0,
+          2 * Math.PI,
+          false
+        );
         ctx.fill();
-      }
-      else {
+      } else {
         ctx.fillText(this.mouse.sticker.emoji, this.mouse.x, this.mouse.y);
       }
     }
@@ -100,7 +106,7 @@ let mouseObject: mouseDisplayable = new mouseDisplayable({
   x: 0,
   y: 0,
   active: false,
-  sticker: null
+  sticker: null,
 });
 
 const movedTool = new Event("tool-moved");
@@ -114,22 +120,19 @@ canvas.addEventListener("tool-moved", () => {
   currentSticker.display(context);
 });
 
-
-
 canvas.addEventListener("mousedown", (ev) => {
   mouseObject = new mouseDisplayable({
     x: ev.offsetX,
     y: ev.offsetY,
     active: true,
-    sticker: currentSticker.sticker
+    sticker: currentSticker.sticker,
   });
   if (currentSticker.sticker == null) {
     workingLine = { points: [], thickness: lineThickness };
     displayList.push(new LineDisplayble(workingLine));
 
     workingLine.points.push({ x: mouseObject.mouse.x, y: mouseObject.mouse.y });
-  }
-  else {
+  } else {
     currentSticker.sticker.x = ev.offsetX;
     currentSticker.sticker.y = ev.offsetY;
   }
@@ -142,16 +145,18 @@ canvas.addEventListener("mousemove", (ev) => {
     x: ev.offsetX,
     y: ev.offsetY,
     active: mouseObject.mouse.active,
-    sticker: currentSticker.sticker
+    sticker: currentSticker.sticker,
   });
   if (mouseObject?.mouse.active) {
     if (currentSticker.sticker == null) {
-        workingLine.points.push({ x: mouseObject.mouse.x, y: mouseObject.mouse.y });
-        canvas.dispatchEvent(changeDraw);
-    }
-    else {
-        currentSticker.sticker.x = ev.offsetX;
-        currentSticker.sticker.y = ev.offsetY;
+      workingLine.points.push({
+        x: mouseObject.mouse.x,
+        y: mouseObject.mouse.y,
+      });
+      canvas.dispatchEvent(changeDraw);
+    } else {
+      currentSticker.sticker.x = ev.offsetX;
+      currentSticker.sticker.y = ev.offsetY;
     }
   }
   canvas.dispatchEvent(movedTool);
@@ -162,7 +167,7 @@ canvas.addEventListener("mouseup", (ev) => {
     x: ev.offsetX,
     y: ev.offsetY,
     active: false,
-    sticker: currentSticker.sticker
+    sticker: currentSticker.sticker,
   });
   if (currentSticker.sticker != null) {
     currentSticker.sticker.x = ev.offsetX;
@@ -213,8 +218,8 @@ thinButton.innerHTML = "Thin Line";
 app.append(thinButton);
 
 thinButton.onclick = () => {
-    mouseObject.mouse.sticker = null;
-    currentSticker = new stickerDisplayable(null);
+  mouseObject.mouse.sticker = null;
+  currentSticker = new stickerDisplayable(null);
   lineThickness = 2;
 };
 
@@ -223,11 +228,12 @@ thickButton.innerHTML = "Thick Line";
 app.append(thickButton);
 
 thickButton.onclick = () => {
-    mouseObject.mouse.sticker = null;
-    currentSticker = new stickerDisplayable(null);
-    lineThickness = 5;
+  mouseObject.mouse.sticker = null;
+  currentSticker = new stickerDisplayable(null);
+  lineThickness = 5;
 };
 
+/*
 const emojiButton1 = document.createElement("button");
 emojiButton1.innerHTML = "Clown Sticker";
 app.append(emojiButton1);
@@ -250,4 +256,36 @@ app.append(emojiButton3);
 
 emojiButton3.onclick = () => {
     currentSticker = new stickerDisplayable({x: currentSticker.sticker?.x!, y: currentSticker.sticker?.y!, emoji: "🤩"});
+};
+*/
+
+let stickerNumber = 1;
+function makeStickerButton(emoji: string): void {
+  const emojiButton = document.createElement("button");
+  emojiButton.innerHTML = "Emoji Sticker " + stickerNumber + ": " + emoji;
+  app.append(emojiButton);
+  stickerNumber++;
+
+  emojiButton.onclick = () => {
+    currentSticker = new stickerDisplayable({
+      x: currentSticker.sticker?.x!,
+      y: currentSticker.sticker?.y!,
+      emoji: emoji,
+    });
+  };
+}
+
+makeStickerButton("🤡");
+makeStickerButton("😭");
+makeStickerButton("🤩");
+
+const customStickerButton = document.createElement("button");
+customStickerButton.innerHTML = "Create a Custom Sticker";
+app.append(customStickerButton);
+
+customStickerButton.onclick = () => {
+  const newEmoji = prompt("Enter New Emoji Sticker Here:", "🤨");
+  if (newEmoji != null) {
+    makeStickerButton(newEmoji);
+  }
 };
