@@ -27,10 +27,10 @@ interface Point {
   y: number;
 }
 
-type Line = { points: Array<Point>; thickness: number, hue: number };
+type Line = { points: Array<Point>; thickness: number; hue: number };
 
 let lineThickness: number = 2;
-let workingLine: Line = { points: [], thickness: lineThickness, hue: 0};
+let workingLine: Line = { points: [], thickness: lineThickness, hue: 0 };
 
 class LineDisplayble implements Displayable {
   constructor(readonly line: Line) {}
@@ -50,7 +50,7 @@ class LineDisplayble implements Displayable {
 let displayList: Array<Displayable> = [];
 let redoDisplayList: Array<Displayable> = [];
 
-const changeDraw = new Event("drawing-changed");
+const changeDraw = new Event("drawing-changed"); //When changeDraw is dispatched, the drawing area will be repainted.
 
 canvas.addEventListener("drawing-changed", () => {
   context.clearRect(0, 0, canvas.width, canvas.height);
@@ -97,7 +97,7 @@ class mouseDisplayable implements Displayable {
           lineThickness,
           0,
           2 * Math.PI,
-          false
+          false,
         );
         ctx.fillStyle = `hsl(${this.mouse.hue}, 100%, 50%)`;
         ctx.fill();
@@ -136,10 +136,12 @@ canvas.addEventListener("mousedown", (ev) => {
     sticker: currentSticker.sticker,
   });
   if (currentSticker.sticker == null) {
-    workingLine = { points: [], thickness: lineThickness, hue: mouseObject.mouse.hue };
+    workingLine = {
+      points: [{ x: mouseObject.mouse.x, y: mouseObject.mouse.y }],
+      thickness: lineThickness,
+      hue: mouseObject.mouse.hue,
+    };
     displayList.push(new LineDisplayble(workingLine));
-
-    workingLine.points.push({ x: mouseObject.mouse.x, y: mouseObject.mouse.y });
   } else {
     currentSticker.sticker.x = ev.offsetX;
     currentSticker.sticker.y = ev.offsetY;
@@ -183,11 +185,13 @@ canvas.addEventListener("mouseup", (ev) => {
     currentSticker.sticker.x = ev.offsetX;
     currentSticker.sticker.y = ev.offsetY;
     displayList.push(currentSticker);
+    currentSticker = new stickerDisplayable(null); //Switch back to pen once sticker is placed.
   }
   canvas.dispatchEvent(changeDraw);
   canvas.dispatchEvent(movedTool);
 });
 
+// Buttons:
 const clearButton = document.createElement("button");
 clearButton.innerHTML = "Clear Drawing";
 app.append(clearButton);
@@ -284,8 +288,6 @@ exportButton.onclick = () => {
   const exportContext = exportCanvas.getContext("2d")!;
   exportCanvas.width = 1024;
   exportCanvas.height = 1024;
-  
-
   exportContext.scale(4, 4);
 
   for (const d of displayList) {
@@ -309,4 +311,3 @@ randomHueButton.onclick = () => {
   mouseObject.mouse.hue = newHue;
   randomHueButton.style.borderColor = `hsl(${newHue}, 100%, 50%)`;
 };
-

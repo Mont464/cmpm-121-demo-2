@@ -82,7 +82,7 @@ button:focus-visible {
 }
 
 canvas {
-  background: white; 
+  background: white;
   border: solid black 5px;
   border-radius: 30px;
 }
